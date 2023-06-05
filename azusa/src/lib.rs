@@ -5,7 +5,23 @@ pub(crate) mod window;
 
 #[derive(Clone,Copy,Debug,PartialEq)]
 pub enum Color {
-    White
+    Black,
+    Silver,
+    Gray,
+    White,
+    Maroon,
+    Red,
+    Purple,
+    Fuchsia,
+    Green,
+    Lime,
+    Olive,
+    Yellow,
+    Navy,
+    Blue,
+    Teal,
+    Aqua,
+    Rgb(u8,u8,u8)
 }
 
 #[derive(Clone,Copy,Debug,PartialEq)]

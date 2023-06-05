@@ -15,7 +15,11 @@ fn main() {
         .unwrap();
 
     let mut surface = WindowSurface::new(&window);
-    let command = [Object::Clear(Color::White)];
+
+    let command = [
+        Object::Clear(Color::White),
+        Object::FillRectangle(0,0,0,0,Color::Gray)
+    ];
 
     event_loop.run(move |event, _, control_flow| {
         control_flow.set_wait();

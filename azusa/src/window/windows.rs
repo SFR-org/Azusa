@@ -1,6 +1,6 @@
 use std::ffi::c_void;
 use std::ptr::null_mut;
-use gdiplus_sys2::{ARGB, GdiplusStartupInput, GpGraphics};
+use gdiplus_sys2::{ARGB, GdiplusStartupInput, GpBrush, GpGraphics, REAL};
 use winapi::shared::basetsd::ULONG_PTR;
 use winapi::shared::minwindef::BYTE;
 use winapi::shared::windef::{HDC, HWND};
@@ -69,6 +69,17 @@ impl Surface for WindowsSurface {
                 Object::Clear(color) => {
                     unsafe {
                         gdiplus_sys2::GdipGraphicsClear(self.graphics, (*color).into());
+                    }
+                }
+
+                Object::FillRectangle(x,y,width,height,color) => {
+                    unsafe {
+                        let mut solid = std::mem::zeroed();
+                        let status = gdiplus_sys2::GdipCreateSolidFill((*color).into(),&mut solid);
+                        if status != gdiplus_sys2::Status_Ok {
+                            panic!("Can't create GpBrush");
+                        }
+                        gdiplus_sys2::GdipFillRectangle(self.graphics, solid as *mut GpBrush, *x as REAL,*y as REAL,*width as REAL,*height as REAL);
                     }
                 }
             }

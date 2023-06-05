@@ -26,7 +26,8 @@ pub enum Color {
 
 #[derive(Clone,Copy,Debug,PartialEq)]
 pub enum Object {
-    Clear(Color)
+    Clear(Color),
+    FillRectangle(u32,u32,u32,u32,Color)
 }
 
 pub trait Surface {

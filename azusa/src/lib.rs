@@ -14,7 +14,8 @@ pub enum Object {
 }
 
 pub trait Surface {
-    fn draw_object(&mut self,obj: &[Object]);
+    fn resize(&mut self,width:u32,height:u32);
+    fn submit(&mut self, obj: &[Object]);
 }
 
 impl WindowSurface {
@@ -31,10 +32,12 @@ impl WindowSurface {
             inner: window::get_graphics_instance(handle),
         }
     }
-}
 
-impl Surface for WindowSurface {
-    fn draw_object(&mut self, obj: &[Object]) {
-        self.inner.draw_object(obj);
+    pub fn submit(&mut self, obj: &[Object]) {
+        self.inner.submit(obj);
+    }
+
+    pub fn resize(&mut self) {
+        self.inner.resize(0,0);
     }
 }

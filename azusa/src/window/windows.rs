@@ -3,6 +3,7 @@ use std::ptr::null_mut;
 use gdiplus_sys2::{ARGB, GdiplusStartupInput, GpGraphics};
 use winapi::shared::basetsd::ULONG_PTR;
 use winapi::shared::windef::{HDC, HWND};
+use winapi::um::wingdi::RGB;
 use winapi::um::winuser::{GetDC, ReleaseDC};
 use crate::{Object, Surface};
 
@@ -36,10 +37,6 @@ impl WindowsSurface {
             panic!("Failed to create Graphics object");
         }
 
-        unsafe {
-            gdiplus_sys2::GdipGraphicsClear(graphics, gdiplus_sys2::Color_Aquamarine as ARGB);
-        }
-
         Self {
             token,
             hdc,
@@ -50,8 +47,27 @@ impl WindowsSurface {
 }
 
 impl Surface for WindowsSurface {
-    fn draw_object(&mut self, obj: &[Object]) {
-        todo!()
+    fn resize(&mut self, width: u32, height: u32) {
+        let hdc = unsafe { GetDC(self.hwnd) };
+        let mut graphics = null_mut();
+        let status = unsafe { gdiplus_sys2::GdipCreateFromHDC(hdc,&mut graphics) };
+        if status != gdiplus_sys2::Status_Ok {
+            panic!("Failed to create Graphics object");
+        }
+
+        self.graphics = graphics;
+    }
+
+    fn submit(&mut self, obj: &[Object]) {
+        for i in obj {
+            match i {
+                Object::Clear(color) => {
+                    unsafe {
+                        gdiplus_sys2::GdipGraphicsClear(self.graphics, gdiplus_sys2::Color_Aqua as ARGB);
+                    }
+                }
+            }
+        }
     }
 }
 

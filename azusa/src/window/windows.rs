@@ -92,6 +92,14 @@ impl Surface for WindowsSurface {
                     }
                 }
 
+                Object::DrawRectangle(x,y,width,height,thickness,color) => {
+                    unsafe {
+                        let mut pen = null_mut();
+                        let status = gdiplus_sys2::GdipCreatePen1((*color).into(),*thickness as REAL,0,&mut pen);
+                        gdiplus_sys2::GdipDrawRectangle(self.buffer,pen,*x as REAL,*y as REAL,*width as REAL,*height as REAL);
+                    }
+                }
+
                 Object::FillRectangle(x,y,width,height,color) => {
                     unsafe {
                         let mut solid = std::mem::zeroed();
@@ -99,6 +107,7 @@ impl Surface for WindowsSurface {
                         if status != gdiplus_sys2::Status_Ok {
                             panic!("Can't create GpBrush");
                         }
+
                         gdiplus_sys2::GdipFillRectangle(self.buffer, solid as *mut GpBrush, *x as REAL,*y as REAL,*width as REAL,*height as REAL);
                     }
                 }

@@ -27,6 +27,7 @@ pub enum Color {
 #[derive(Clone,Copy,Debug,PartialEq)]
 pub enum Object {
     Clear(Color),
+    DrawRectangle(u32,u32,u32,u32,u32,Color),
     FillRectangle(u32,u32,u32,u32,Color)
 }
 

@@ -3,7 +3,7 @@ use winit::{
     event_loop::EventLoop,
     window::WindowBuilder,
 };
-use azusa::{Color, Object, Surface, WindowSurface};
+use azusa::{Color, Method, Surface, WindowSurface};
 
 fn main() {
     let event_loop = EventLoop::new();
@@ -19,8 +19,8 @@ fn main() {
     let mut surface = WindowSurface::new(&window,size.width,size.height);
 
     let command = [
-        Object::Clear(Color::Red),
-        Object::FillRectangle(100,100,200,200,Color::White)
+        Method::Clear(Color::Red),
+        Method::FillRectangle(100, 100, 200, 200, Color::White)
     ];
 
     event_loop.run(move |event, _, control_flow| {

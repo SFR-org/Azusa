@@ -7,8 +7,9 @@ use winapi::shared::minwindef::BYTE;
 use winapi::shared::windef::{HBITMAP, HDC, HGDIOBJ, HWND, RECT};
 use winapi::um::wingdi::{BitBlt, CreateCompatibleBitmap, CreateCompatibleDC, DeleteDC, DeleteObject, GetBValue, GetGValue, GetRValue, RGB, SelectObject, SRCCOPY, SwapBuffers};
 use winapi::um::winuser::{GetClientRect, GetDC, ReleaseDC};
-use crate::{Color, Object, Surface};
+use crate::{Color, Method, Surface};
 
+#[doc(hidden)]
 pub struct WindowsSurface {
     token: ULONG_PTR,
     buffer: *mut GpGraphics,
@@ -83,16 +84,16 @@ impl Surface for WindowsSurface {
         self.buffer_bitmap = buffer_bitmap;
     }
 
-    fn submit(&mut self, obj: &[Object]) {
+    fn submit(&mut self, obj: &[Method]) {
         for i in obj {
             match i {
-                Object::Clear(color) => {
+                Method::Clear(color) => {
                     unsafe {
                         gdiplus_sys2::GdipGraphicsClear(self.buffer, (*color).into());
                     }
                 }
 
-                Object::DrawRectangle(x,y,width,height,thickness,color) => {
+                Method::DrawRectangle(x, y, width, height, thickness, color) => {
                     unsafe {
                         let mut pen = null_mut();
                         let status = gdiplus_sys2::GdipCreatePen1((*color).into(),*thickness as REAL,0,&mut pen);
@@ -100,7 +101,7 @@ impl Surface for WindowsSurface {
                     }
                 }
 
-                Object::FillRectangle(x,y,width,height,color) => {
+                Method::FillRectangle(x, y, width, height, color) => {
                     unsafe {
                         let mut solid = std::mem::zeroed();
                         let status = gdiplus_sys2::GdipCreateSolidFill((*color).into(),&mut solid);
@@ -137,6 +138,7 @@ impl Drop for WindowsSurface {
     }
 }
 
+#[doc(hidden)]
 fn get_color(r: u8,g: u8,b: u8) -> ARGB {
     let colorref = RGB(r,g,b);
     let r = GetRValue(colorref) as u32;
@@ -169,6 +171,7 @@ impl Into<ARGB> for Color {
     }
 }
 
+#[doc(hidden)]
 fn get_client_width(hwnd: HWND) -> i32 {
     let mut rect = RECT {
         left: 0,
@@ -183,6 +186,7 @@ fn get_client_width(hwnd: HWND) -> i32 {
     rect.right - rect.left
 }
 
+#[doc(hidden)]
 fn get_client_height(hwnd: HWND) -> i32 {
     let mut rect = RECT {
         left: 0,

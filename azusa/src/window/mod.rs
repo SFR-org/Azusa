@@ -3,6 +3,7 @@ use crate::Surface;
 
 pub mod windows;
 
+#[doc(hidden)]
 pub fn get_graphics_instance(handle: &impl HasRawWindowHandle,width: u32,height: u32) -> Box<dyn Surface> {
     let surface = match handle.raw_window_handle() {
         RawWindowHandle::UiKit(_) => {

@@ -3,7 +3,7 @@ use crate::Surface;
 
 pub mod windows;
 
-pub fn get_graphics_instance(handle: &impl HasRawWindowHandle) -> Box<dyn Surface> {
+pub fn get_graphics_instance(handle: &impl HasRawWindowHandle,width: u32,height: u32) -> Box<dyn Surface> {
     let surface = match handle.raw_window_handle() {
         RawWindowHandle::UiKit(_) => {
             panic!("Sorry, this platform is not supported");
@@ -30,7 +30,7 @@ pub fn get_graphics_instance(handle: &impl HasRawWindowHandle) -> Box<dyn Surfac
             panic!("Sorry, this platform is not supported");
         }
         RawWindowHandle::Win32(handle) => {
-            let surface = windows::WindowsSurface::new(handle.hwnd);
+            let surface = windows::WindowsSurface::new(handle.hwnd, width as i32, height as i32);
             Box::new(surface)
         }
         RawWindowHandle::WinRt(_) => {

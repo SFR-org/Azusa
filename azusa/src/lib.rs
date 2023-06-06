@@ -44,9 +44,9 @@ pub struct WindowSurface {
 }
 
 impl WindowSurface {
-    pub fn new(handle: &impl HasRawWindowHandle) -> Self {
+    pub fn new(handle: &impl HasRawWindowHandle,width: u32,height: u32) -> Self {
         Self {
-            inner: window::get_graphics_instance(handle),
+            inner: window::get_graphics_instance(handle,width,height),
         }
     }
 
@@ -54,7 +54,7 @@ impl WindowSurface {
         self.inner.submit(obj);
     }
 
-    pub fn resize(&mut self) {
-        self.inner.resize(0,0);
+    pub fn resize(&mut self,width: u32,height: u32) {
+        self.inner.resize(width,height);
     }
 }

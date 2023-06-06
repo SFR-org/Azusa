@@ -1,22 +1,26 @@
-use std::ffi::c_void;
+use std::ffi::{c_int, c_void};
 use std::ptr::null_mut;
-use gdiplus_sys2::{ARGB, GdiplusStartupInput, GpBrush, GpGraphics, REAL};
+use std::time::Duration;
+use gdiplus_sys2::{ARGB, Bitmap, GdiplusStartupInput, GpBrush, GpGraphics, GpImage, REAL};
 use winapi::shared::basetsd::ULONG_PTR;
 use winapi::shared::minwindef::BYTE;
-use winapi::shared::windef::{HDC, HWND};
-use winapi::um::wingdi::{GetBValue, GetGValue, GetRValue, RGB};
-use winapi::um::winuser::{GetDC, ReleaseDC};
+use winapi::shared::windef::{HBITMAP, HDC, HGDIOBJ, HWND, RECT};
+use winapi::um::wingdi::{BitBlt, CreateCompatibleBitmap, CreateCompatibleDC, DeleteDC, DeleteObject, GetBValue, GetGValue, GetRValue, RGB, SelectObject, SRCCOPY, SwapBuffers};
+use winapi::um::winuser::{GetClientRect, GetDC, ReleaseDC};
 use crate::{Color, Object, Surface};
 
 pub struct WindowsSurface {
     token: ULONG_PTR,
-    hdc: HDC,
+    buffer: *mut GpGraphics,
+    buffer_bitmap: HBITMAP,
+    bitmap_old: HGDIOBJ,
     hwnd: HWND,
-    graphics: *mut GpGraphics
+    hdc: HDC,
+    buffer_dc: HDC
 }
 
 impl WindowsSurface {
-    pub fn new(hwnd: *mut c_void) -> Self {
+    pub fn new(hwnd: *mut c_void,width: i32,height:i32) -> Self {
         let hwnd = hwnd as HWND;
         let mut token = 0;
         let input = GdiplusStartupInput {
@@ -32,35 +36,51 @@ impl WindowsSurface {
         }
 
         let hdc = unsafe { GetDC(hwnd) };
-        let mut graphics = null_mut();
-        let status = unsafe { gdiplus_sys2::GdipCreateFromHDC(hdc,&mut graphics) };
-        if status != gdiplus_sys2::Status_Ok {
-            panic!("Failed to create Graphics object");
-        }
+        let buffer_dc = unsafe { CreateCompatibleDC(hdc) };
+        let buffer_bitmap = unsafe { CreateCompatibleBitmap(hdc,width,height) };
+        let bitmap_old = unsafe { SelectObject(buffer_dc,buffer_bitmap as HGDIOBJ) };
+
+        let mut buffer = null_mut();
+        let status = unsafe { gdiplus_sys2::GdipCreateFromHDC(buffer_dc,&mut buffer) };
 
         Self {
             token,
-            hdc,
+            buffer,
+            buffer_bitmap,
+            bitmap_old,
             hwnd,
-            graphics
+            hdc,
+            buffer_dc
         }
     }
 }
 
 impl Surface for WindowsSurface {
     fn resize(&mut self, width: u32, height: u32) {
-        let hdc = unsafe { GetDC(self.hwnd) };
-        let mut graphics = null_mut();
-        let status = unsafe { gdiplus_sys2::GdipCreateFromHDC(hdc,&mut graphics) };
-        if status != gdiplus_sys2::Status_Ok {
-            panic!("Failed to create Graphics object");
+        if self.buffer != null_mut() {
+            unsafe {
+                gdiplus_sys2::GdipDeleteGraphics(self.buffer);
+            }
         }
 
         unsafe {
-            gdiplus_sys2::GdipDeleteGraphics(self.graphics);
+            SelectObject(self.buffer_dc,self.bitmap_old);
+            DeleteObject(self.buffer_bitmap as HGDIOBJ);
+            DeleteDC(self.buffer_dc);
         }
 
-        self.graphics = graphics;
+        let hdc = unsafe { GetDC(self.hwnd) };
+        let buffer_dc = unsafe { CreateCompatibleDC(hdc) };
+        let buffer_bitmap = unsafe { CreateCompatibleBitmap(hdc, width as c_int, height as c_int) };
+        let bitmap_old = unsafe { SelectObject(buffer_dc,buffer_bitmap as HGDIOBJ) };
+
+        let mut buffer = null_mut();
+        let status = unsafe { gdiplus_sys2::GdipCreateFromHDC(buffer_dc,&mut buffer) };
+
+        self.hdc = hdc;
+        self.buffer_dc = buffer_dc;
+        self.buffer = buffer;
+        self.buffer_bitmap = buffer_bitmap;
     }
 
     fn submit(&mut self, obj: &[Object]) {
@@ -68,7 +88,7 @@ impl Surface for WindowsSurface {
             match i {
                 Object::Clear(color) => {
                     unsafe {
-                        gdiplus_sys2::GdipGraphicsClear(self.graphics, (*color).into());
+                        gdiplus_sys2::GdipGraphicsClear(self.buffer, (*color).into());
                     }
                 }
 
@@ -79,19 +99,30 @@ impl Surface for WindowsSurface {
                         if status != gdiplus_sys2::Status_Ok {
                             panic!("Can't create GpBrush");
                         }
-                        gdiplus_sys2::GdipFillRectangle(self.graphics, solid as *mut GpBrush, *x as REAL,*y as REAL,*width as REAL,*height as REAL);
+                        gdiplus_sys2::GdipFillRectangle(self.buffer, solid as *mut GpBrush, *x as REAL,*y as REAL,*width as REAL,*height as REAL);
                     }
                 }
             }
         }
+
+        unsafe {
+            BitBlt(self.hdc, 0, 0, get_client_width(self.hwnd),get_client_height(self.hwnd),self.buffer_dc, 0, 0, SRCCOPY);
+        }
+
+        // unsafe {
+        //     let hdc = GetDC(self.hwnd);
+        //     let mut graphics = null_mut();
+        //     let status = gdiplus_sys2::GdipCreateFromHDC(hdc,&mut graphics);
+        //     BitBlt(hdc, 0, 0, 1280, 720, self.buffer_dc, 0, 0, SRCCOPY);
+        // }
     }
 }
 
 impl Drop for WindowsSurface {
     fn drop(&mut self) {
         unsafe {
-            gdiplus_sys2::GdipDeleteGraphics(self.graphics);
-            ReleaseDC(self.hwnd,self.hdc);
+            gdiplus_sys2::GdipDeleteGraphics(self.buffer);
+            ReleaseDC(self.hwnd,self.buffer_dc);
             gdiplus_sys2::GdiplusShutdown(self.token);
         }
     }
@@ -127,4 +158,32 @@ impl Into<ARGB> for Color {
             Color::Rgb(r,g,b) => get_color(r,g,b),
         }
     }
+}
+
+fn get_client_width(hwnd: HWND) -> i32 {
+    let mut rect = RECT {
+        left: 0,
+        top: 0,
+        right: 0,
+        bottom: 0,
+    };
+    unsafe {
+        GetClientRect(hwnd,&mut rect);
+    }
+
+    rect.right - rect.left
+}
+
+fn get_client_height(hwnd: HWND) -> i32 {
+    let mut rect = RECT {
+        left: 0,
+        top: 0,
+        right: 0,
+        bottom: 0,
+    };
+    unsafe {
+        GetClientRect(hwnd,&mut rect);
+    }
+
+    rect.bottom - rect.top
 }

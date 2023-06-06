@@ -10,15 +10,17 @@ fn main() {
 
     let window = WindowBuilder::new()
         .with_title("A fantastic window!")
-        .with_inner_size(winit::dpi::LogicalSize::new(128.0, 128.0))
+        .with_inner_size(winit::dpi::LogicalSize::new(1280,720))
         .build(&event_loop)
         .unwrap();
 
-    let mut surface = WindowSurface::new(&window);
+    let size = window.inner_size();
+
+    let mut surface = WindowSurface::new(&window,size.width,size.height);
 
     let command = [
-        Object::Clear(Color::White),
-        Object::FillRectangle(0,0,0,0,Color::Gray)
+        Object::Clear(Color::Red),
+        Object::FillRectangle(100,100,200,200,Color::White)
     ];
 
     event_loop.run(move |event, _, control_flow| {
@@ -33,7 +35,8 @@ fn main() {
                 event: WindowEvent::Resized(_),
                 window_id,
             } => {
-                surface.resize();
+                let size = window.inner_size();
+                surface.resize(size.width,size.height);
             }
             Event::MainEventsCleared => {
                 window.request_redraw();

@@ -49,7 +49,7 @@ pub trait Surface {
     /// Resizes the surface.
     fn resize(&mut self,width:u32,height:u32);
     /// Executes the passed drawing method **from the beginning of the array**
-    fn submit(&mut self, obj: Vec<Method>);
+    fn submit(&mut self, obj: &[Method]);
 }
 
 impl WindowSurface {
@@ -68,8 +68,7 @@ impl WindowSurface {
     }
 
     #[inline]
-    pub fn submit(&mut self, obj: &mut Vec<Method>) {
-        optimize(obj);
+    pub fn submit(&mut self, obj: &[Method]) {
         self.inner.submit(obj);
     }
 
@@ -78,30 +77,3 @@ impl WindowSurface {
         self.inner.resize(width,height);
     }
 }
-
-fn optimize(methods: &mut Vec<Method>) {
-    static mut CNT:u32 = 0;
-        let index = methods.iter().position(|&item| 
-        
-        match item {
-            Method::Fill => false,
-            Method::Clear(c) => {
-                if unsafe { CNT == 0 } {
-                    unsafe { CNT += 1 };
-                    return false;
-                }
-                unsafe {
-                CNT += 1;}
-                item == Method::Clear(c)
-                
-            }
-        }).unwrap();
-        
-        for i in 0..index {
-            methods.remove(0);
-        }
-        unsafe {
-            CNT = 0;
-        }
-        println!("{}",index);
-    }

@@ -18,7 +18,7 @@ fn main() {
 
     let mut surface = WindowSurface::new(&window,size.width,size.height);
 
-    let command = [
+    let mut command = vec![
         Method::Clear(Color::Red),
         Method::FillRectangle(100, 100, 200, 200, Color::White)
     ];

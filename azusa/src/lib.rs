@@ -26,6 +26,20 @@ pub enum Color {
     Rgb(u8,u8,u8)
 }
 
+#[derive(Clone,Copy,Debug,PartialEq)]
+pub struct Point2<T> {
+    pub(crate) x: T,
+    pub(crate) y: T
+}
+
+impl<T> Point2<T> {
+    pub fn new(x: T,y: T) -> Self {
+        Self {
+            x,y
+        }
+    }
+}
+
 /// # Method
 /// Definition of methods for drawing on surfaces.
 #[derive(Clone,Copy,Debug,PartialEq)]
@@ -38,11 +52,11 @@ pub enum Method {
     /// # DrawRectangle method.
     /// ### Arguments
     /// Clear(x: u32,y: u32,height: u32,width: u32,thickness: u32,color: Color)
-    DrawRectangle(u32,u32,u32,u32,u32,Color),
+    DrawRectangle(Point2<u32>,u32,u32,u32,Color),
     /// # FillRectangle method.
     /// ### Arguments
     /// Clear(x: u32,y: u32,width: u32,height: u32,color: Color)
-    FillRectangle(u32,u32,u32,u32,Color)
+    FillRectangle(Point2<u32>,u32,u32,Color),
 }
 
 pub trait Surface {

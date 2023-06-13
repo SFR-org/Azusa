@@ -93,15 +93,15 @@ impl Surface for WindowsSurface {
                     }
                 }
 
-                Method::DrawRectangle(x, y, width, height, thickness, color) => {
+                Method::DrawRectangle(point, width, height, thickness, color) => {
                     unsafe {
                         let mut pen = null_mut();
                         let status = gdiplus_sys2::GdipCreatePen1((*color).into(),*thickness as REAL,0,&mut pen);
-                        gdiplus_sys2::GdipDrawRectangle(self.buffer,pen,*x as REAL,*y as REAL,*width as REAL,*height as REAL);
+                        gdiplus_sys2::GdipDrawRectangle(self.buffer,pen,(*point).x as REAL,(*point).y as REAL,*width as REAL,*height as REAL);
                     }
                 }
 
-                Method::FillRectangle(x, y, width, height, color) => {
+                Method::FillRectangle(point, width, height, color) => {
                     unsafe {
                         let mut solid = std::mem::zeroed();
                         let status = gdiplus_sys2::GdipCreateSolidFill((*color).into(),&mut solid);
@@ -109,7 +109,7 @@ impl Surface for WindowsSurface {
                             panic!("Can't create GpBrush");
                         }
 
-                        gdiplus_sys2::GdipFillRectangle(self.buffer, solid as *mut GpBrush, *x as REAL,*y as REAL,*width as REAL,*height as REAL);
+                        gdiplus_sys2::GdipFillRectangle(self.buffer, solid as *mut GpBrush, (*point).x as REAL,(*point).y as REAL,*width as REAL,*height as REAL);
                     }
                 }
             }
@@ -118,13 +118,6 @@ impl Surface for WindowsSurface {
         unsafe {
             BitBlt(self.hdc, 0, 0, get_client_width(self.hwnd),get_client_height(self.hwnd),self.buffer_dc, 0, 0, SRCCOPY);
         }
-
-        // unsafe {
-        //     let hdc = GetDC(self.hwnd);
-        //     let mut graphics = null_mut();
-        //     let status = gdiplus_sys2::GdipCreateFromHDC(hdc,&mut graphics);
-        //     BitBlt(hdc, 0, 0, 1280, 720, self.buffer_dc, 0, 0, SRCCOPY);
-        // }
     }
 }
 
